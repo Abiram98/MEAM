@@ -3,15 +3,17 @@ import pandas as pd
 import numpy as np
 from torchvision.io import read_image
 from torch.utils.data import DataLoader, Dataset
+import torch
 
 class AudioExplorerDataset(Dataset):
     def __init__(self, music_dir, other_dir, transform=None, target_transform=None):
         train_data = np.load(music_dir)
         other_data = np.load(other_dir)
         self.train_data = np.append(train_data,other_data,0 )
+        self.train_data = torch.from_numpy(self.train_data)
         self.labels = [1 for x in range(0, 10500)]
         self.labels.extend([0 for x in range(0, 10500)])
-        self.labels = np.array(self.labels)
+        self.labels = torch.from_numpy( np.array(self.labels)).type(torch.FloatTensor)
         self.transform = transform
         self.target_transform = target_transform
 
