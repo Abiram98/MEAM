@@ -1,5 +1,7 @@
 import math
 import sys
+import numpy as np
+import pickle
 
 # Cosine similarity
 def cosine(vec1, vec2):
@@ -64,7 +66,7 @@ class Bucket:
                 if (i == j):
                     continue
 
-                avg += matrix_sim(self.bucket[i].matrix(9, self.bucket[j].matrix())
+                avg += matrix_sim(self.bucket[i].matrix(), self.bucket[j].matrix())
 
             if (len(self.bucket) > 1):
                 avg = avg / (len(self.bucket) - 1)
@@ -83,7 +85,6 @@ class Bucket:
 
 class LSHStore:
     def __init__(self):
-        self.idx
         self.__fingerprint_sim_threshold = 0.9
         self.__buckets = list()
         self.__total_size = 0
@@ -104,14 +105,14 @@ class LSHStore:
                     found = True
 
         if (found):
-            self.__buckets[most_similar_idx].add(element.matrix())
+            self.__buckets[most_similar_idx].add(element)
 
         else:
             b = Bucket()
-            b.add(element.matrix())
+            b.add(element)
             self.__buckets.append(b)
 
-        avg_fingerprints_sims = __avg_fingerprints_similarities()
+        avg_fingerprints_sims = self.__avg_fingerprints_similarities()
         self.__fingerprint_sim_threshold = max(self.__fingerprint_sim_threshold, avg_fingerprints_sims)
 
     def __avg_fingerprints_similarities(self):
@@ -123,6 +124,9 @@ class LSHStore:
                     continue
 
                 avg += matrix_sim(self.__buckets[i].fingerprint(), self.__buckets[j].fingerprint())
+
+        if (len(self.__buckets) < 2):
+            return avg
 
         return avg / (pow(len(self.__buckets), 2) - len(self.__buckets))
 
@@ -139,24 +143,49 @@ class LSHStore:
         best_element = None
 
         for i in range(len(self.__buckets[highest_sim_idx].elements())):
-            if (matrix_sim(matrix, self.__buckets[highest_sim_idx].elements()[i]) > best_element_sim):
-                best_element_sim = matrix_sim(matrix, self.__buckets[highest_sim_idx].elements()[i])
+            if (matrix_sim(matrix, self.__buckets[highest_sim_idx].elements()[i].matrix()) > best_element_sim):
+                best_element_sim = matrix_sim(matrix, self.__buckets[highest_sim_idx].elements()[i].matrix())
                 best_element = self.__buckets[highest_sim_idx].elements()[i]
 
-        return best_element
+        return [best_element, best_element_sim]
 
+# Usage: <command> <data file> <database file>
 if __name__ == "__main__":
-    m1 = [[1, 2, 3], [3, 2, 1], [1, 1, 1]]
-    m2 = [[2, 2, 2], [2, 2, 2], [2, 2, 2]]
-    m3 = [[3, 3, 3], [2, 2, 2], [1, 1, 1]]
-    print("Sim: " + str(matrix_sim(m1, m2)))
+    if (len(sys.argv) < 4):
+        print("Usage: <command> <file>")
+        exit(-1)
 
-    b = Bucket()
-    print("Uninitialized bucket fingerprint: " + str(b.fingerprint()))
+    DB_FILE = sys.argv[3]
+    SIM_THRES = 0.9
 
-    b.add(m1)
-    b.add(m2)
-    print("Fingerprint with two elements: " + str(b.fingerprint()))
+    if (sys.argv[1] == "load"):
+        data = np.load(sys.argv[2])
+        store = LSHStore()
 
-    b.add(m2)
-    print("Fingerprint with three elements: " + str(b.fingerprint()))
+        for i in range(len(data)):
+            store.add(Element(data[i], i))
+            print("Progress: {prog:.2f}%".format(prog = (i / len(data)) * 100), end = "\r")
+
+        with open(DB_FILE, "wb") as file:
+            pickle.dump(store, file)
+
+    elif (sys.argv[1] == "search"):
+        store = None
+        queries = np.load(sys.argv[2])
+
+        with open(DB_FILE, "rb") as file:
+            store = pickle.load(file)
+
+        with open("output.csv", "w") as file:
+            for i in range(len(data)):
+                result_sim = store.search(queries[i])[1]
+                is_song = 0
+
+                if (result > SIM_THRES):
+                    is_song = 1
+
+                file.write(str(i) + "," + str(is_sone))
+
+    else:
+        print("Usage: Commands include 'load' and 'search'")
+        exit(-1)
