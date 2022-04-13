@@ -14,6 +14,9 @@ class AudioExplorerDataset(Dataset):
         self.labels = [1 for x in range(0, 10500)]
         self.labels.extend([0 for x in range(0, 10500)])
         self.labels = torch.from_numpy( np.array(self.labels)).type(torch.FloatTensor)
+
+        self.train_data = torch.reshape(self.train_data, (self.train_data.shape[0],1,self.train_data.shape[1],self.train_data.shape[2]))
+        self.labels = torch.reshape(self.labels, (self.labels.shape[0],1))
         self.transform = transform
         self.target_transform = target_transform
 
