@@ -55,7 +55,7 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 1
+epochs = 15
 
 for epoch in range(epochs):
     running_loss = 0.0
