@@ -83,11 +83,16 @@ class Bucket:
     def elements(self):
         return self.bucket
 
+    # This does not clear the bucket fingerprint
+    def clear(self):
+        self.bucket = list()
+
 class LSHStore:
     def __init__(self):
         self.__fingerprint_sim_threshold = 0.9
         self.__buckets = list()
         self.__total_size = 0
+        self.__mem_optimized = False
 
     def add(self, element):
         found = False
@@ -139,8 +144,14 @@ class LSHStore:
                 highest_sim = matrix_sim(matrix, self.__buckets[i].fingerprint())
                 highest_sim_idx = i
 
+        if (self.__mem_optimized):
+            return [Element(self.__buckets[highest_sim_idx].fingerprint(), "fingerprint"), highest_sim]
+
         best_element_sim = 0
         best_element = None
+
+        if (highest_sim_idx == -1):
+            return None
 
         for i in range(len(self.__buckets[highest_sim_idx].elements())):
             if (matrix_sim(matrix, self.__buckets[highest_sim_idx].elements()[i].matrix()) > best_element_sim):
@@ -148,6 +159,12 @@ class LSHStore:
                 best_element = self.__buckets[highest_sim_idx].elements()[i]
 
         return [best_element, best_element_sim]
+
+    def mem_optimize(self):
+        for bucket in self.__buckets:
+            bucket.clear()
+
+        self.__mem_optimized = True
 
 # Usage: <command> <data file> <database file>
 if __name__ == "__main__":

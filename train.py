@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from torchinfo import summary
+import torch.nn.utils.prune as prune
 
 from dataloader import AudioExplorerDataset,DataLoader
 import torch.optim as optim
@@ -127,4 +128,23 @@ with torch.no_grad():
     runs = len(test_dataloader)
     print(f"Test data resuls:\nPrecision {precisions_t/runs:.2f}, Recall {recalls_t/runs:.2f}, F1-score {f1s_t/runs:.2f}")
 
+# print('Performing weight pruning')
+# model = cnn
+# parameters_to_prune = (
+    # (model.conv1, 'weight'),
+    # (model.conv2, 'weight'),
+    # (model.fc1, 'weight'),
+    # (model.fc2, 'weight'),
+    # (model.fc3, 'weight'),
+# )
+# prune.global_unstructured(
+    # parameters_to_prune,
+    # pruning_method=prune.L1Unstructured,
+    # amount=0.3,
+# )
 
+# print('Performing quantization')
+# model_int8 = torch.quantization.quantize_dynamic(
+    # model,
+    # {torch.nn.Linear}, 
+    # dtype=torch.qint8)
