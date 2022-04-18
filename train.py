@@ -7,6 +7,8 @@ import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
 
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 batch_size = 64
 test_split = 0.2
 valid_split = 0.2
@@ -31,7 +33,7 @@ class CNN(nn.Module):
         return x
 
 with torch.no_grad():
-    t = torch.autograd.Variable(torch.Tensor([0.5]))
+    t = torch.autograd.Variable(torch.Tensor([0.5])).to(device)
 
 data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
 
@@ -46,7 +48,7 @@ train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True
 test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
 valid_dataloader = DataLoader(valid_data, batch_size=batch_size, shuffle=True)
 cnn = CNN()
-
+cnn.to(device)
 summary(cnn, input_size=(batch_size, 1, 30,79))
 
 
@@ -55,8 +57,8 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 15
-
+epochs = 1
+one = None
 for epoch in range(epochs):
     running_loss = 0.0
     precisions = 0
@@ -65,14 +67,18 @@ for epoch in range(epochs):
     
     for i, data in enumerate(train_dataloader):    
         inputs, labels = data
+        one = inputs[1,1,:,:]
+        labels = 
+        inputs,labels = inputs.to(device), labels.to(device)
+        
         
         optimizer.zero_grad()
         outputs = cnn(inputs)
         outs = torch.reshape((outputs > t).float(),(-1,))
 
-        precisions += precision_score(torch.reshape(labels,(-1,)),outs)
-        recalls += recall_score(torch.reshape(labels,(-1,)),outs)
-        f1s += f1_score(torch.reshape(labels,(-1,)),outs)
+        precisions += precision_score(torch.reshape(labels.cpu(),(-1,)),outs.cpu())
+        recalls += recall_score(torch.reshape(labels.cpu(),(-1,)),outs.cpu())
+        f1s += f1_score(torch.reshape(labels.cpu(),(-1,)),outs.cpu())
 
         loss = criterion(outputs,labels)
         loss.backward()
@@ -88,14 +94,17 @@ for epoch in range(epochs):
     with torch.no_grad():
         for i, data in enumerate(valid_dataloader):
             input_valid,labels_valid = data
+            input_valid,labels_valid = input_valid.to(device), labels_valid.to(device)
             out_v = torch.reshape((cnn(input_valid) > t).float(),(-1,))
             labels_valid = torch.reshape(labels_valid.float(),(-1,))
+            
+            
 
-            precisions_v += precision_score(labels_valid,out_v)
-            recalls_v += recall_score(labels_valid,out_v)
-            f1s_v += f1_score(labels_valid,out_v)
+            precisions_v += precision_score(labels_valid.cpu(),out_v.cpu())
+            recalls_v += recall_score(labels_valid.cpu(),out_v.cpu())
+            f1s_v += f1_score(labels_valid.cpu(),out_v.cpu())
             if i == len(valid_dataloader)-1:
-                print(f'[{epoch+1}, {i+1:5d}] val precision: {precisions_v/i:.3f} val recall {recalls_v/i:.3f} val f1 score {f1s_v/i:.3f}')
+                print(f'[{epoch+1}] val precision: {precisions_v/i:.3f} val recall {recalls_v/i:.3f} val f1 score {f1s_v/i:.3f}')
 
 
 print('Finished Training')
@@ -107,6 +116,7 @@ with torch.no_grad():
     f1s_t = 0
     for data in test_dataloader:
         inputs,labels = data
+        cnn = cnn.cpu()
         outputs = cnn(inputs)
         outs = torch.reshape((outputs > t).float(),(-1,))
         labels = torch.reshape(labels,(-1,))
