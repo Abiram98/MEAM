@@ -12,5 +12,6 @@ Load with data and run benchmark
 docker run --rm -it --entrypoint /bin/bash lsh_benchmark
 
 # Within Docker container
+git lfs pull
 python3 lsh_benchmark.py
 ```
