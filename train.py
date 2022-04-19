@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torchinfo import summary
 import torch.nn.utils.prune as prune
 
-from dataloader import AudioExplorerDataset,DataLoader, AudioExplorerSegmentedDataset
+from dataloader import AudioExplorerDataset,DataLoader, AudioExplorerSegmentedDataset,TestDataset
 import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
@@ -20,8 +20,8 @@ valid_split = 0.2
 with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5])).to(device)
 
-#data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
-data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 15)
+data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
+#data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 15)
 data_size = len(data)
 test_size = int(test_split*data_size)
 valid_size = int(valid_split*data_size)
@@ -42,7 +42,7 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 10
+epochs = 1
 best_val_f1 = 0
 best_epoch = {}
 for epoch in range(epochs):
@@ -93,7 +93,7 @@ for epoch in range(epochs):
                 print(f'[{epoch+1}] val precision: {precisions_v/i:.3f} val recall {recalls_v/i:.3f} val f1 score {f1s_v/i:.3f}')
                 if (f1s_v/i) > best_val_f1:
                     print('Achieved a better model')
-                    torch.save(cnn.state_dict(), f"{epoch}_{model_name}_weights.pth")
+                    torch.save(cnn.state_dict(), f"{epoch+1}_{model_name}_weights.pth")
                     best_val_f1 = (f1s_v/i)
                     best_epoch = {
                         'epoch': epoch+1,
@@ -125,6 +125,23 @@ with torch.no_grad():
     
     runs = len(test_dataloader)
     print(f"Test data resuls:\nPrecision {precisions_t/runs:.2f}, Recall {recalls_t/runs:.2f}, F1-score {f1s_t/runs:.2f}")
+
+test_dat = TestDataset('data/test_data.npy')
+test_datloader = DataLoader(test_dat, shuffle=False)
+
+f = open('test_data_predictions.txt', "w")
+with torch.no_grad():
+    test_dat = TestDataset('data/test_data.npy')
+    test_datloader = DataLoader(test_dat, shuffle=False)
+    t = torch.autograd.Variable(torch.Tensor([0.5]))
+    for data in test_datloader:
+        inputs = data
+        cnn = cnn.cpu()
+        outputs = cnn(inputs)
+        outs = torch.reshape((outputs > t).float(),(-1,))
+        f.write(str(int(outs.cpu().numpy()[0]))+'\n')
+f.close()
+
 
 # print('Performing weight pruning')
 # model = cnn
