@@ -89,7 +89,7 @@ class Bucket:
 
 class LSHStore:
     def __init__(self):
-        self.__fingerprint_sim_threshold = 0.9
+        self.__fingerprint_sim_threshold = 0.95
         self.__buckets = list()
         self.__total_size = 0
         self.__mem_optimized = False
