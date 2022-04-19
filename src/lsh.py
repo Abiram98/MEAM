@@ -95,7 +95,6 @@ class LSHStore:
         self.__mem_optimized = False
 
     def add(self, element):
-        found = False
         most_similar = 0
         most_similar_idx = -1
 
@@ -106,10 +105,7 @@ class LSHStore:
                 most_similar = sim
                 most_similar_idx = i
 
-                if (sim > self.__fingerprint_sim_threshold):
-                    found = True
-
-        if (found):
+        if (most_similar > self.__fingerprint_sim_threshold):
             self.__buckets[most_similar_idx].add(element)
 
         else:
@@ -117,23 +113,24 @@ class LSHStore:
             b.add(element)
             self.__buckets.append(b)
 
-        avg_fingerprints_sims = self.__avg_fingerprints_similarities()
-        self.__fingerprint_sim_threshold = max(self.__fingerprint_sim_threshold, avg_fingerprints_sims)
+        if (len(self.__buckets) > 1):
+            max_fingerprints_sims = self.__max_fingerprints_similarities()
+            self.__fingerprint_sim_threshold = max(self.__fingerprint_sim_threshold, max_fingerprints_sims)
 
-    def __avg_fingerprints_similarities(self):
-        avg = 0
+    def __max_fingerprints_similarities(self):
+        max_sim = 0
 
         for i in range(len(self.__buckets)):
             for j in range(len(self.__buckets)):
                 if (i == j):
                     continue
 
-                avg += matrix_sim(self.__buckets[i].fingerprint(), self.__buckets[j].fingerprint())
+                sim = matrix_sim(self.__buckets[i].fingerprint(), self.__buckets[j].fingerprint())
 
-        if (len(self.__buckets) < 2):
-            return avg
+                if (sim > max_sim):
+                    max_sim = sim
 
-        return avg / (pow(len(self.__buckets), 2) - len(self.__buckets))
+        return max_sim
 
     def search(self, matrix):
         highest_sim = 0
