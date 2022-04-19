@@ -8,7 +8,7 @@ import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-from models.default_model import CNN
+from models.simple_model import CNN
 model_name = 'cnn'
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -42,7 +42,7 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 1
+epochs = 100
 best_val_f1 = 0
 best_epoch = {}
 for epoch in range(epochs):
