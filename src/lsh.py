@@ -166,6 +166,14 @@ class LSHStore:
 
         self.__mem_optimized = True
 
+    def bucket_sizes(self):
+        sizes = list()
+
+        for bucket in self.__buckets:
+            sizes.append(len(bucket.elements()))
+
+        return sizes
+
 # Usage: <command> <data file> <database file>
 if __name__ == "__main__":
     if (len(sys.argv) < 4):

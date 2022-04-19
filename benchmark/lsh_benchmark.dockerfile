@@ -10,11 +10,21 @@ WORKDIR /home/
 RUN mkdir benchmark
 RUN mkdir .git
 
+COPY data/* benchmark/
 COPY dataloader.py ./benchmark/
 COPY benchmark/lsh_benchmark.py benchmark/
-COPY src/lsh.py ./benchmark
+COPY benchmark/data_util.py benchmark/
+COPY src/lsh.py benchmark/
 COPY .git/ .git/
 
 WORKDIR benchmark/
 
-CMD python3 lsh_benchmark.py
+CMD python3 lsh_benchmark.py && echo && \
+    echo "Full music:" && \
+    du -h full_music.db && \
+    echo "Full non-music:" && \
+    du -h full_non_music.db && \
+    echo && echo "Appr. music:" && \
+    du -h appr_music.db && \
+    echo "Appr. non-music:" && \
+    du -h appr_non_music.db
