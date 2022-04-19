@@ -66,6 +66,21 @@ class AudioExplorerSegmentedDataset(Dataset):
     def __getitem__(self, idx):
         return self.train_data[idx], self.labels[idx]
 
+class TestDataset(Dataset):
+    def __init__(self, test_dir, transform=None, target_transform=None):
+        test_data = np.load(test_dir)
+        self.test_data = torch.from_numpy(test_data)
+        self.test_data = torch.reshape(self.test_data, (self.test_data.shape[0],1,self.test_data.shape[1],self.test_data.shape[2]))
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        return len(self.test_data)
+
+    def __getitem__(self, idx):
+        return self.test_data[idx]
+
+
 if __name__=="__main__":
     training_data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 5)
     train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
