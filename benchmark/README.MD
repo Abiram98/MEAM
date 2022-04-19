@@ -6,12 +6,8 @@ Build image
 docker build -f lsh_benchmark.dockerfile -t lsh_benchmark ..
 ```
 
-Load with data and run benchmark
+Run benchmark
 
 ```
-docker run --rm -it --entrypoint /bin/bash lsh_benchmark
-
-# Within Docker container
-git lfs pull
-python3 lsh_benchmark.py
+docker run --rm -it lsh_benchmark
 ```
