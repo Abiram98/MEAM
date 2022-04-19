@@ -3,11 +3,13 @@ import torch.nn.functional as F
 from torchinfo import summary
 import torch.nn.utils.prune as prune
 
-from dataloader import AudioExplorerDataset,DataLoader
+from dataloader import AudioExplorerDataset,DataLoader, AudioExplorerSegmentedDataset
 import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
+
 from models.default_model import CNN
+model_name = 'cnn'
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -18,8 +20,8 @@ valid_split = 0.2
 with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5])).to(device)
 
-data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
-
+#data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
+data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 15)
 data_size = len(data)
 test_size = int(test_split*data_size)
 valid_size = int(valid_split*data_size)
@@ -40,8 +42,9 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 100
+epochs = 10
 best_val_f1 = 0
+best_epoch = {}
 for epoch in range(epochs):
     running_loss = 0.0
     precisions = 0
@@ -68,7 +71,8 @@ for epoch in range(epochs):
 
         running_loss += loss.item()
         if i % 20 ==19:
-            print(f'[{epoch+1}, {i+1:5d}] loss: {running_loss/20:.3f} precision: {precisions/i:.3f} recall {recalls/i:.3f} f1 score {f1s/i:.3f}')
+            train_result = {'train_precision':precisions/i, 'train_recall':recalls/i, 'train_f1': f1s/i}
+            print(f"[{epoch+1}, {i+1:5d}] loss: {running_loss/20:.3f} precision: {train_result['train_precision']:.3f} recall {train_result['train_recall']:.3f} f1 score {train_result['train_f1']:.3f}")
             running_loss = 0.0
     precisions_v = 0
     recalls_v = 0
@@ -89,12 +93,21 @@ for epoch in range(epochs):
                 print(f'[{epoch+1}] val precision: {precisions_v/i:.3f} val recall {recalls_v/i:.3f} val f1 score {f1s_v/i:.3f}')
                 if (f1s_v/i) > best_val_f1:
                     print('Achieved a better model')
-                    torch.save(cnn.state_dict(), f"{epoch}cnn_weights.pth")
+                    torch.save(cnn.state_dict(), f"{epoch}_{model_name}_weights.pth")
                     best_val_f1 = (f1s_v/i)
+                    best_epoch = {
+                        'epoch': epoch+1,
+                        'val_precision': (precisions_v/i), 
+                        'val_recall': recalls_v/i, 
+                        'val_f1':f1s_v/i,
+                        'train_precision': train_result['train_precision'],
+                        'train_recall': train_result['train_recall'],
+                        'train_f1': train_result['train_f1']
+                    }
 
 
 print('Finished Training')
-
+print(f"Best Training in Epoch {best_epoch['epoch']} with train: precision {best_epoch['train_precision']:.3f}, recall {best_epoch['train_recall']:.3f}, f1 score {best_epoch['train_f1']:.3f}; valid: precision {best_epoch['val_precision']:.3f} recall {best_epoch['val_recall']:.3f} f1 {best_epoch['val_f1']:.3f}")
 with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5]))
     precisions_t = 0
