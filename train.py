@@ -7,31 +7,13 @@ from dataloader import AudioExplorerDataset,DataLoader
 import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
+from models.default_model import CNN
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 batch_size = 64
 test_split = 0.2
 valid_split = 0.2
-class CNN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1,6, kernel_size=3)
-        self.pool = nn.MaxPool2d(2,2)
-        self.conv2 = nn.Conv2d(6,16,5)
-        self.pool2 = nn.AdaptiveMaxPool2d(20)
-        self.fc1 = nn.Linear(6400,120) #1360
-        self.fc2 = nn.Linear(120,84)
-        self.fc3 = nn.Linear(84,1)
-    def forward(self,x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = torch.flatten(x,1)
-        
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
-        return x
 
 with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5])).to(device)
@@ -58,8 +40,8 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 1
-one = None
+epochs = 100
+best_val_f1 = 0
 for epoch in range(epochs):
     running_loss = 0.0
     precisions = 0
@@ -68,8 +50,7 @@ for epoch in range(epochs):
     
     for i, data in enumerate(train_dataloader):    
         inputs, labels = data
-        one = inputs[1,1,:,:]
-        labels = 
+        #one = inputs[1,1,:,:]
         inputs,labels = inputs.to(device), labels.to(device)
         
         
@@ -106,6 +87,10 @@ for epoch in range(epochs):
             f1s_v += f1_score(labels_valid.cpu(),out_v.cpu())
             if i == len(valid_dataloader)-1:
                 print(f'[{epoch+1}] val precision: {precisions_v/i:.3f} val recall {recalls_v/i:.3f} val f1 score {f1s_v/i:.3f}')
+                if (f1s_v/i) > best_val_f1:
+                    print('Achieved a better model')
+                    torch.save(cnn.state_dict(), f"{epoch}cnn_weights.pth")
+                    best_val_f1 = (f1s_v/i)
 
 
 print('Finished Training')
