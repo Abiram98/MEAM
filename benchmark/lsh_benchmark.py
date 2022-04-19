@@ -89,6 +89,9 @@ for i, ground_truth in enumerate(test_data):
 print()
 print()
 print("Accuracy: " + str(float(correct) / count))
+print("Precision: " + str(precision_score(labels, outs)))
+print("Recall: " + str(recall_score(labels, outs)))
+print("F1: " + str(f1_score(labels, outs)))
 
 music_store.mem_optimize()
 non_music_store.mem_optimize()
@@ -126,3 +129,6 @@ for i, ground_truth in enumerate(test_data):
         outs.append(0)
 
 print("Memory optimized accuracy: " + str(float(correct) / count))
+print("Precision: " + str(precision_score(labels, outs)))
+print("Recall: " + str(recall_score(labels, outs)))
+print("F1-score: " + str(f1_score(labels, outs)))
