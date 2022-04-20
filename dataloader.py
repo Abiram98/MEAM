@@ -8,9 +8,11 @@ import torch
 class AudioExplorerDataset(Dataset):
     def __init__(self, music_dir, other_dir, transform=None, target_transform=None):
         train_data = np.load(music_dir)
+        
         other_data = np.load(other_dir)
         self.train_data = np.append(train_data,other_data,0 )
         self.train_data = torch.from_numpy(self.train_data)
+        print(self.train_data[1,:,:].element_size()*self.train_data[1,:,:].nelement())
         self.labels = [1 for x in range(0, 10500)]
         self.labels.extend([0 for x in range(0, 10500)])
         self.labels = torch.from_numpy( np.array(self.labels)).type(torch.FloatTensor)
@@ -40,20 +42,18 @@ class AudioExplorerSegmentedDataset(Dataset):
         new_timestep = get_closest_time_step(X,79)
         train_data = train_data[:,:,:new_timestep].reshape(int(new_timestep/X*train_data.shape[0]),30, X)
         train_items = train_data.shape[0]
-        #print(sample.shape)
-        #exit()
-        #train_data = train_data.
         other_data = np.load(other_dir)
         other_data = other_data[:,:,:new_timestep].reshape(int(new_timestep/X*other_data.shape[0]),30, X)
         other_item = other_data.shape[0]
         self.train_data = np.append(train_data,other_data,0 )
 
         self.train_data = torch.from_numpy(self.train_data)
-        print(self.train_data.shape)
+        
         self.labels = [1 for x in range(0, train_items)]
         self.labels.extend([0 for x in range(0, other_item)])
         self.labels = torch.from_numpy( np.array(self.labels)).type(torch.FloatTensor)
-        print(self.labels.shape)
+        space = self.train_data[1,:,:].element_size()*self.train_data[1,:,:].nelement()
+        print(f"One Spectogram after split has {space} bytes space")
         
         self.train_data = torch.reshape(self.train_data, (self.train_data.shape[0],1,self.train_data.shape[1],self.train_data.shape[2]))
         self.labels = torch.reshape(self.labels, (self.labels.shape[0],1))
@@ -82,5 +82,5 @@ class TestDataset(Dataset):
 
 
 if __name__=="__main__":
-    training_data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 5)
+    training_data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 20)
     train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)

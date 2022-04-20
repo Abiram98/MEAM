@@ -8,8 +8,8 @@ import torch.optim as optim
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-from models.simple_model import CNN
-model_name = 'cnn'
+from models.default_model import CNN
+model_name = 'simple'
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -21,7 +21,7 @@ with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5])).to(device)
 
 data = AudioExplorerDataset("data/music_data.npy", "data/other_data.npy")
-#data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 15)
+#data = AudioExplorerSegmentedDataset("data/music_data.npy", "data/other_data.npy", 20)
 data_size = len(data)
 test_size = int(test_split*data_size)
 valid_size = int(valid_split*data_size)
@@ -42,7 +42,7 @@ warnings.simplefilter("ignore")
 
 criterion = nn.BCELoss()
 optimizer = optim.SGD(cnn.parameters(),lr=0.001, momentum=0.9)
-epochs = 100
+epochs = 1
 best_val_f1 = 0
 best_epoch = {}
 for epoch in range(epochs):
@@ -136,6 +136,7 @@ with torch.no_grad():
     t = torch.autograd.Variable(torch.Tensor([0.5]))
     for data in test_datloader:
         inputs = data
+        cnn.load_state_dict(torch.load('57_cnn_weights.pth'))
         cnn = cnn.cpu()
         outputs = cnn(inputs)
         outs = torch.reshape((outputs > t).float(),(-1,))
